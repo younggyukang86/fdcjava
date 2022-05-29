@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+
+repositories {
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+task copyDependencies(type: Copy) {
+    into "$buildDir/libs/deps"
+    from configurations.runtimeClasspath
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'Main',
+                'Class-Path': configurations.compileClasspath.files.collect { "deps/$it.name" }.join(' ')
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    archiveName 'filewriteTest.jar'
+}
+
+test {
+    useJUnitPlatform()
+}

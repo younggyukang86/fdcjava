@@ -1,0 +1,9 @@
+rootProject.name = 'graalvmTest'
+include 'snappyTest'
+include 'base64Test'
+include 'filewriteTest'
+include 'rmqListener'
+include 'rmqPublisher'
+include 'unnestSampleDataCreateTest'
+include 'snappyUnnestTest'
+
