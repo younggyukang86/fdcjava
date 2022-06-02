@@ -6,4 +6,5 @@ include 'rmqListener'
 include 'rmqPublisher'
 include 'unnestSampleDataCreateTest'
 include 'snappyUnnestTest'
+include 'dbJdbcTest'
 
