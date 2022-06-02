@@ -44,7 +44,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveName 'snappyUnnestTest.jar'
+    archiveFileName = "snappyUnnestTest.jar"
 }
 
 test {

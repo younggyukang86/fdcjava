@@ -41,7 +41,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveFileName 'base64Test.jar'
+    archiveFileName = "base64Test.jar"
 }
 
 test {

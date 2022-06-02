@@ -45,7 +45,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveFileName 'rmqListenerTest.jar'
+    archiveFileName = "rmqListenerTest.jar"
 }
 
 test {

@@ -41,7 +41,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveFileName 'filewriteTest.jar'
+    archiveFileName = "filewriteTest.jar"
 }
 
 test {
