@@ -53,7 +53,6 @@ public class Main {
                     break;
             }
         }
-
     }
 
     private static Connection getConnection() throws Exception {
