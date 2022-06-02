@@ -45,7 +45,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveName 'rmqPublisherTest.jar'
+    archiveFileName 'rmqPublisherTest.jar'
 }
 
 test {

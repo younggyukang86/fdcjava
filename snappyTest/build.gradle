@@ -43,7 +43,7 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    archiveName 'snappyTest.jar'
+    archiveFileName 'snappyTest.jar'
 }
 
 test {
