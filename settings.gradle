@@ -8,4 +8,5 @@ include 'unnestSampleDataCreateTest'
 include 'snappyUnnestTest'
 include 'dbJdbcTest'
 include 'dbDbcpTest'
+include 'dbHikariTest'
 
