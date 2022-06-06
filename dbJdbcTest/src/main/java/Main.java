@@ -7,7 +7,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         while(true) {
-            System.out.println("명렁어를 입력하여 주세요.");
+            System.out.println("명렁어를 입력하여 주세요. (JDBC TEST)");
             System.out.println("1 : 테이블 생성");
             System.out.println("2 : 생성한 테이블에 데이터 입력");
             System.out.println("3 : 테이블 데이터 조회");
