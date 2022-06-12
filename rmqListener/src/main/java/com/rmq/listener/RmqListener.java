@@ -4,11 +4,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
-
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
-import java.util.Date;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,7 +20,6 @@ public class RmqListener {
     private final static String RMQ_USERNAME = "rabbitmq";
     private final static String RMQ_PASSWORD = "rabbitmq";
 
-
     public static void main(String[] args) {
         System.out.println("RabbitMQ  Listener  Start!");
         RmqListener listener = new RmqListener();
@@ -30,24 +27,23 @@ public class RmqListener {
     }
 
     protected void initialStart() {
-        try  {
-            ConnectionFactory  factory  =  getFactoryConnection();
-            System.out.println("RabbitMQ  Connection  Success!");
+        try {
+            ConnectionFactory factory = getFactoryConnection();
+            System.out.println("RabbitMQ Connection Success!");
 
-            Connection  connection  =  factory.newConnection();
-            Channel  channel  =  connection.createChannel();
+            Connection connection = factory.newConnection();
+            Channel channel = connection.createChannel();
 
-            channel.exchangeDeclare(RMQ_EXCHANGE,  "direct",  true);
-            System.out.println("RabbitMQ  Exchange  Declare  Success!");
-            channel.queueBind(QUEUE_NAME,  RMQ_EXCHANGE,  RMQ_ROUTING_KEY );
-            System.out.println("RabbitMQ  Queue  Bind  Success!");
+            channel.exchangeDeclare(RMQ_EXCHANGE,"direct", true);
+            System.out.println("RabbitMQ Exchange Declare Success!");
+            channel.queueBind(QUEUE_NAME, RMQ_EXCHANGE, RMQ_ROUTING_KEY );
+            System.out.println("RabbitMQ Queue Bind Success!");
 
             AtomicReference<Timestamp> totalStart = new AtomicReference<>(new Timestamp(System.currentTimeMillis()));
             AtomicLong start = new AtomicLong(System.currentTimeMillis());
 
-            DeliverCallback  callback  =  (consumerTag,  delivery)  ->  {
-                String msg  =  new  String(delivery.getBody(),  "UTF-8");
-                Date totime = new Date();
+            DeliverCallback callback = (consumerTag, delivery) -> {
+                String msg = new String(delivery.getBody(), "UTF-8");
 
                 if ("[the number is 2]".equals(msg)) {
                     totalStart.set(new Timestamp(System.currentTimeMillis()));
@@ -60,24 +56,22 @@ public class RmqListener {
                 }
             };
 
-            channel.basicConsume(QUEUE_NAME,  true,  callback,  consumerTag  ->  {});
-            System.out.println("RabbitMQ  Consume  Create  Success!");
+            channel.basicConsume(QUEUE_NAME, true, callback, consumerTag -> {});
+            System.out.println("RabbitMQ Consume Create Success!");
 
-        }  catch  (TimeoutException te)  {
+        } catch (TimeoutException te)  {
             te.printStackTrace();
-        }  catch  (IOException ioe)  {
+        } catch (IOException ioe)  {
             ioe.printStackTrace();
         }
     }
 
-    protected  ConnectionFactory  getFactoryConnection() {
-        ConnectionFactory  factory  =  new ConnectionFactory();
+    private ConnectionFactory getFactoryConnection() {
+        ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(RMQ_HOST);
         factory.setPort(RMQ_PORT);
         factory.setUsername(RMQ_USERNAME);
         factory.setPassword(RMQ_PASSWORD);
-
         return  factory;
     }
-
 }
