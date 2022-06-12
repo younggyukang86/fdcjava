@@ -1,8 +1,19 @@
-import java.io.File;
+import java.awt.image.ImagingOpException;
+import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Main {
 
@@ -22,7 +33,7 @@ public class Main {
         long end = System.currentTimeMillis();
 
         //System.out.println("수행시간 : " + String.valueOf(end - start) + " ns");
-        System.out.println("Decode 수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");*/
+        System.out.println("수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");*/
 
         Path newFolderPath = Paths.get(copyFolder);
 
@@ -33,14 +44,15 @@ public class Main {
         }
         Files.createDirectories(newFolderPath);
 
-        final int bufferMaxSize = 1024 * 1024;
+        /*final int bufferMaxSize = 1024 * 1024;
         Path sourceFilePath = Paths.get(sourceFile);
 
         long start = System.currentTimeMillis();
 
         for (int i = 1; i <= 10; i++) {
+            Path resultFilePath = Paths.get(copyFolder + "\\test" + i + ".txt");
             try (FileChannel sourceChannel = FileChannel.open(sourceFilePath, StandardOpenOption.READ);
-                 FileChannel resultChannel = FileChannel.open(Paths.get(copyFolder + "\\test" + i + ".txt"), StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+                 FileChannel resultChannel = FileChannel.open(resultFilePath, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
                 ByteBuffer buffer = ByteBuffer.allocateDirect(bufferMaxSize);
 
                 while (sourceChannel.read(buffer) >= 0) {
@@ -52,7 +64,164 @@ public class Main {
                 e.printStackTrace();
             }
         }
+        long end = System.currentTimeMillis();*/
+
+        Path sourceFilePath = Paths.get(sourceFile);
+
+        long start = System.currentTimeMillis();
+
+        for (int i = 1; i <= 10; i++) {
+            Path resultFilePath = Paths.get(copyFolder + "\\test" + i + ".txt");
+
+            try (AsynchronousFileChannel sourceChannel = AsynchronousFileChannel.open(sourceFilePath, StandardOpenOption.READ);) {
+
+                ByteBuffer buffer = ByteBuffer.allocate((int) sourceChannel.size());
+                Future<Integer> readResult = sourceChannel.read(buffer, 0);
+                readResult.get();
+                if (readResult.isDone()) {
+
+                }
+
+                buffer.flip();
+                byte[] bytes = buffer.array();
+
+                try (AsynchronousFileChannel resultChannel = AsynchronousFileChannel.open(
+                        resultFilePath, StandardOpenOption.WRITE, StandardOpenOption.CREATE);) {
+                    ByteBuffer writeBuffer = ByteBuffer.wrap(bytes);
+                    Future<Integer> wirteResult = resultChannel.write(writeBuffer, 0);
+                    if (wirteResult.isDone()) {
+
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                buffer.clear();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         long end = System.currentTimeMillis();
-        System.out.println("Decode 수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");
+
+        System.out.println("수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");
     }
+
+    public static List<String> readAllLines(byte[] bytes) {
+        if (bytes == null || bytes.length == 0)
+            return new ArrayList<String>();
+
+        try (ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+             Reader in = new InputStreamReader(is, StandardCharsets.UTF_8);
+             BufferedReader br = new BufferedReader(in)) {
+
+            List<String> lines = new ArrayList<String>();
+            while (true) {
+                String line = br.readLine();
+                if (line == null)
+                    break;
+                lines.add(line);
+            }
+            return lines;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void asyncFile(Path sourceFilePath, Path resultFilePath) throws IOException {
+
+        try {
+            System.err.println("AsynchronousFileChannel 테스트 시작");
+
+            AsynchronousFileChannel asyncFileChannel = AsynchronousFileChannel.open(
+                    sourceFilePath,
+                    StandardOpenOption.READ
+            );
+
+            long startTime = System.nanoTime();
+
+            long fileSize = asyncFileChannel.size();
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(8 * 1024);
+
+            class AsyncIOResultInfo {
+                long iterations = 0L;
+                long totalBytesRead = 0L;
+            }
+            AsyncIOResultInfo asyncIOResultInfo = new AsyncIOResultInfo();
+
+
+            asyncFileChannel.read(
+                    byteBuffer, 0, asyncIOResultInfo,    ////// iterations 대신 asyncIOResultInfo 전달
+                    new CompletionHandler<Integer, AsyncIOResultInfo>() {    ////// 타입 파라미터에 Long 대신 AsyncIOResultInfo 전달
+
+                        @Override
+                        public void completed(Integer result, AsyncIOResultInfo asyncIOResultInfo) {    ////// Long 대신 AsyncIOResultInfo 전달
+                            if (result == -1) {
+                                long endTime = System.nanoTime();
+                                System.err.println("비정상 종료 : " + (endTime - startTime) + " ns elapsed.");
+                                closeAsyncFileChannel(asyncFileChannel);
+                                return;
+                            }
+
+                            // 반복 회수 확인
+                            System.err.println((asyncIOResultInfo.iterations + 1) + "회차 반복");
+
+                            asyncIOResultInfo.totalBytesRead += result;
+
+                            byteBuffer.flip();
+                            byteBuffer.mark();
+
+                           /* try (AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
+                                    resultFilePath, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.DELETE_ON_CLOSE);) {
+                                ByteBuffer buffer = ByteBuffer.allocate(1024);
+                                buffer.put(byteBuffer.array());
+                                buffer.flip();
+                                Future<Integer> operation = fileChannel.write(buffer, 0);
+                                buffer.clear();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }*/
+
+                            byteBuffer.reset();
+
+                            if (result == fileSize || result < byteBuffer.capacity()) {
+                                long endTime = System.nanoTime();
+                                System.err.println("AsynchronousFileChannel.read() 완료 : " + (endTime - startTime) + " ns elapsed.");
+
+                                System.err.println("fileSize       : " + fileSize);
+                                System.err.println("totalBytesRead : " + asyncIOResultInfo.totalBytesRead);
+
+                                //// asyncFileChannel 닫기
+                                closeAsyncFileChannel(asyncFileChannel);
+
+                                return;
+                            }
+                            asyncIOResultInfo.iterations++;
+                            asyncFileChannel.read(byteBuffer, result * asyncIOResultInfo.iterations, asyncIOResultInfo, this);
+                        }
+
+                        @Override
+                        public void failed(Throwable exc, AsyncIOResultInfo iterations) {    ////// Long 대신 AsyncIOResultInfo 전달
+                            exc.printStackTrace();
+                            closeAsyncFileChannel(asyncFileChannel);
+                        }
+                    }
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void closeAsyncFileChannel(AsynchronousFileChannel asyncFileChannel) {
+        if (asyncFileChannel != null && asyncFileChannel.isOpen()) {
+            try {
+                asyncFileChannel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
