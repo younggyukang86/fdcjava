@@ -26,7 +26,7 @@ public class RmqListener {
         listener.initialStart();
     }
 
-    protected void initialStart() {
+    private void initialStart() {
         try {
             ConnectionFactory factory = getFactoryConnection();
             System.out.println("RabbitMQ Connection Success!");
