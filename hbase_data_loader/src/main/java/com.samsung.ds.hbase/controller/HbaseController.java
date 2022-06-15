@@ -3,7 +3,6 @@ package com.samsung.ds.hbase.controller;
 import com.jcraft.jsch.IO;
 import javassist.bytecode.ByteArray;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.hbase.Cell;
@@ -12,7 +11,6 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
-
 import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.map.Serializers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.xerial.snappy.Snappy;
-
 import java.io.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -180,7 +177,7 @@ public class HbaseController {
         Table table = getHbaseTable();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         long rowNum = 0;
-        for(String rowKey : rowKeys) {
+        for (String rowKey : rowKeys) {
             Result r = getResultFromHbase(rowKey, table);
             for (Cell cell : r.listCells()) {
                 String qualifier = hbaseQualifierReplace(new String(cell.getQualifierArray()));
@@ -229,7 +226,7 @@ public class HbaseController {
 
         for (String rowKey : rowKeys) {
             Result r = getResultFromHbase(rowKey, table);
-            for(Cell cell : r.listCells()) {
+            for (Cell cell : r.listCells()) {
                 String qualifier = hbaseQualifierReplace(new String(cell.getQualifierArray()));
                 String columnFamily = new String(cell.getFamilyArray());
                 log.info("[HBASE COLUMN INFO] column family :{}, column qualifier : {}", columnFamily, qualifier);
