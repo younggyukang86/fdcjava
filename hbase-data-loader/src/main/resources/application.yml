@@ -11,14 +11,12 @@ spring:
       -org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       -org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 
-
   #######################
   # Main
   #######################
 
   main:
     allow-bean-definition-overriding: true
-
 
   #######################
   # Jdbc DataSource
@@ -37,7 +35,6 @@ spring:
     continue-on-error: true
     initialization-mode: always
 
-
 #######################
 # Hbase
 #######################
@@ -49,17 +46,16 @@ hbase:
     output-path: /data1/jsm_trace_test
     ref-value: ref_value
 
-
 #######################
 # Hbase
 #######################
+
 server:
   address: 0.0.0.0
   port: 8183
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/plain,application/javascript
-
 
 #######################
 # Logging
