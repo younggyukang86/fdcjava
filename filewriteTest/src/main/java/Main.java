@@ -35,8 +35,8 @@ public class Main {
         //System.out.println("수행시간 : " + String.valueOf(end - start) + " ns");
         System.out.println("수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");*/
 
+        // 전체 파일 삭제
         Path newFolderPath = Paths.get(copyFolder);
-
         if (Files.isDirectory(newFolderPath)) {
             for (int i = 1; i <= 10; i++) {
                 Files.deleteIfExists(Paths.get(copyFolder + "\\test" + i + ".txt"));
@@ -44,6 +44,7 @@ public class Main {
         }
         Files.createDirectories(newFolderPath);
 
+        // 1. NIO 동기 파일 복사
         /*final int bufferMaxSize = 1024 * 1024;
         Path sourceFilePath = Paths.get(sourceFile);
 
@@ -66,7 +67,8 @@ public class Main {
         }
         long end = System.currentTimeMillis();*/
 
-        Path sourceFilePath = Paths.get(sourceFile);
+        // 2. NIO 비동기 파일 복사
+        /*Path sourceFilePath = Paths.get(sourceFile);
 
         long start = System.currentTimeMillis();
 
@@ -102,6 +104,24 @@ public class Main {
                 e.printStackTrace();
             }
         }
+        long end = System.currentTimeMillis();*/
+
+
+        // 3. IO 파일 복사
+        long start = System.currentTimeMillis();
+
+        for (int i = 1; i <=10; i++) {
+            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(sourceFile));
+                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(copyFolder + "\\test" + i + ".txt", true));) {
+                int c;
+                while ((c = bis.read()) != -1) {
+                    bos.write(c);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         long end = System.currentTimeMillis();
 
         System.out.println("수행시간 : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " 초");
