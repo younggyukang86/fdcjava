@@ -1,0 +1,92 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.0'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+group = 'com.samsung.ds.hbase'
+version = '0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+
+    developmentOnly
+    runtimeClasspath {
+        extendsFrom developmentOnly
+    }
+}
+
+dependencies {
+
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web' // Spring MVC
+    implementation 'org.springframework.boot:spring-boot-starter-aop' // Spring Aop
+    implementation 'org.springframework.boot:spring-boot-starter-logging' // Spring Log(Default logback)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc' // Spring JDBC
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // Spring JPA
+    implementation 'org.springframework.boot:spring-boot-starter-actuator' // Spring Actuator
+    implementation 'org.springframework:spring-jms' // Spring Jms
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor' // Spring Configuration Properties
+
+    // Logging Weakness patch (Logback 1.2.9↑, Log4j2 2.17.0↑)
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.2.11' // Logback Core
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11' // Logback Classic
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36' // Slf4j
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.36' // Slf4j
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: '2.17.2' // Log4j2 to Slf4j
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.17.2' // Log4j2 Api
+
+    implementation 'org.postgresql:postgresql:42.3.6' // Postgre Sql
+    implementation 'org.apache.hbase:hbase-client:2.4.12' // Hbase
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16' // Log4j Jdbc
+
+    // Apache Tools
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+
+    implementation 'com.google.guava:guava:31.1-jre' // Guava
+    implementation 'org.xerial.snappy:snappy-java:1.1.8.4' // Snappy
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks {
+    processResources {
+        duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
+}
