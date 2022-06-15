@@ -38,6 +38,7 @@ spring:
 #######################
 # Hbase
 #######################
+
 hbase:
   trace:
     table-name: tcas_trace_data_v1
@@ -47,7 +48,7 @@ hbase:
     ref-value: ref_value
 
 #######################
-# Hbase
+# Server
 #######################
 
 server:
