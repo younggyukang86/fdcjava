@@ -8,10 +8,17 @@ plugins {
 group = 'com.test'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
+targetCompatibility = '11'
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
 
 repositories {
     maven { url 'https://repo.spring.io/release' }
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
