@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.samsung.ds.hbase</groupId>
-    <artifactId>hbase_data_loader</artifactId>
+    <artifactId>hbase-data-loader</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
