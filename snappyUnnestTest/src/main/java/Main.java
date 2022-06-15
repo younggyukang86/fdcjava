@@ -3,6 +3,7 @@ import org.xerial.snappy.Snappy;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -12,10 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,7 +80,7 @@ public final class Main {
         System.out.println(fileName);
 
         // 1. 기존 샘플 소스
-        /*ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         long rowNum = 0;
         for (String rowKey : rowKeys) {
             String rowData = getResultFromHbase(rowKey, tableDatas);
@@ -113,7 +111,7 @@ public final class Main {
                     rowNum++;
                 }
             }
-        }*/
+        }
 
         // 기존 샘플 소스 io 전체 쓰기
         /*File file = new File(folder, fileName);
@@ -126,7 +124,7 @@ public final class Main {
             throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
         }*/
 
-        // 2. NIO 전체 쓰기
+        // 2. NIO 동기 전체 쓰기
         /*final int bufferMaxSize = 1024 * 1024;
         try (FileChannel resultChannel = FileChannel.open(Paths.get(folder + fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             ByteBuffer buffer = ByteBuffer.allocateDirect(bufferMaxSize);
@@ -139,7 +137,22 @@ public final class Main {
             throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
         }*/
 
-        // 3. for 문돌면서 NIO 조금씩 쓰기
+        // 3. NIO 비동기 전체 쓰기
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        final int bufferMaxSize = 1024 * 1024;
+        try (AsynchronousFileChannel resultChannel = AsynchronousFileChannel.open(Paths.get(folder + fileName), EnumSet.of(StandardOpenOption.WRITE, StandardOpenOption.CREATE), executorService)) {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bufferMaxSize);
+            buffer = ByteBuffer.wrap(baos.toByteArray());
+            resultChannel.write(buffer, 0);
+            resultChannel.close();
+            System.out.println("[CSV FILE] create csv file!!!!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
+        }
+        executorService.shutdown();
+
+        // 4. for 문돌면서 NIO 조금씩 쓰기
         /*long rowNum = 0;
         final int bufferMaxSize = 1024 * 1024;
         try (FileChannel resultChannel = FileChannel.open(Paths.get(folder + fileName), StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
@@ -186,9 +199,8 @@ public final class Main {
             throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
         }*/
 
-        // 4. for 문돌면서 IO 조금씩 쓰기
-
-        File file = new File(folder, fileName);
+        // 5. for 문돌면서 IO 조금씩 쓰기
+        /*File file = new File(folder, fileName);
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -231,7 +243,7 @@ public final class Main {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
-        }
+        }*/
 
         return rowNum;
     }
