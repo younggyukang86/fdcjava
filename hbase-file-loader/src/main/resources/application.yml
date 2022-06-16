@@ -1,4 +1,7 @@
 spring:
+  config:
+    activate:
+      on-profile: local
   application:
     name: DS-BIGDATA-HBASE-DATA-LOADER-SERVICE
 
@@ -25,9 +28,15 @@ spring:
   datasource:
     hikari:
       driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-      #jdbc-url: jdbc:log4jdbc:postgresql://10.166.212.183/postgres
-      #username: gpadmin
-      #password: chagneme
+      # Mes DB
+      #jdbc-url: jdbc:log4jdbc:postgresql://192.28.33.50:5432/mes
+      #username: etl_user
+      #password: zhsks20!
+      # Dev Test DB
+      #jdbc-url: jdbc:log4jdbc:postgresql://12.56.187.61:5432/dc
+      #username: postgres
+      #password: changeme
+      # Local DB
       jdbc-url: jdbc:log4jdbc:postgresql://localhost:5432/test
       username: kangside21
       password: kangside21
@@ -48,13 +57,18 @@ hbase:
   config:
     zk:
       port: 2181
+      # quorum: 192.28.186.253
       quorum: hdm3.impala.datalake.samsungds.net
-      znode: /hbase_dfc
+      # znode: /hbase-unsecure
+      znode: /hbase_fdc
   trace:
     table-name: tcas_trace_data_v1
     sample-query: select record_keys from (select unnest(record_key) as record_keys, unnest(recipe_id)::character varying as recipe, unnest(trace_param_index) as idx, row_index, priority, trace_param_name, ppid, step_seq, fdc_model, eqp_area, eqp_model, eqp_id, eqp_index, mes_line, line_no, data_create_time, data_lake_time from api.fdc_trace_index where line_no = 'P1' and eqp_id in ('ESOP301', 'ESOP302') and data_create_time <= '2021-11-12' and data_create_time >= '2021-11-10') as tt where idx in ('304726', '303999', '305048', '304321', '303677', '305370') and recipe = 'E_F9VIL105PIT'
     sample-query-2: select record_key from trace_record_keys limit 10
-    output-path: /data1/jsm_trace_test
+    # Dev Test Output Path
+    # output-path: /opt/hbase_trace_test
+    # Local Test Output Path
+    output-path: C:/opt/hbase_trace_test
     ref-value: ref_value
 
 #######################
@@ -66,7 +80,7 @@ server:
   port: 8181
   compression:
     enabled: true
-    mime-types: application/json,application/xml,text/html,text/plain,application/javascript
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript
 
 #######################
 # Logging

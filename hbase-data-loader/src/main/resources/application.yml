@@ -1,4 +1,7 @@
 spring:
+  config:
+    activate:
+      on-profile: local
   application:
     name: DS-BIGDATA-HBASE-DATA-LOADER-SERVICE
 
@@ -56,7 +59,7 @@ server:
   port: 8183
   compression:
     enabled: true
-    mime-types: application/json,application/xml,text/html,text/plain,application/javascript
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,application/javascript
 
 #######################
 # Logging
