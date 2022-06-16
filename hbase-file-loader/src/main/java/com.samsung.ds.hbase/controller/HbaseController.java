@@ -93,7 +93,7 @@ public class HbaseController {
         ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
         List<Callable<Object>> callableTasks = new ArrayList();
         for (int i = 0; i < numberOfThreads; i++) {
-            int idx = 1;
+            int idx = i;
             Callable<Object> callableTask = () -> {
                 return decompressTest(partRowKeys.get(idx));
             };
@@ -189,11 +189,11 @@ public class HbaseController {
             for (Cell cell : r.listCells()) {
                 String qualifier = hbaseQualifierReplace(new String(cell.getQualifierArray()));
                 String columnFamily = new String(cell.getFamilyArray());
-                log.info("[HBASE COLUMN INFO] column family : {}, column qualfier : {}", columnFamily, qualifier);
+                log.info("[HBASE COLUMN INFO] column family : {}, column qualifier : {}", columnFamily, qualifier);
                 String refValue = hbaseQualifierReplace(getRefValueFromResult(r));
                 if (!qualifier.equals(refValueQualifier)) {
                     // uncompressed trace data
-                    String data = new String(Snappy.uncompress(Base64.decodeBase64(new String(cell.getFamilyArray()))));
+                    String data = new String(Snappy.uncompress(Base64.decodeBase64(new String(cell.getValueArray()))));
                     // unnest trace data
                     String[] datas = data.split(",");
                     List<String> c3 = splitData(datas[2]);
@@ -203,9 +203,10 @@ public class HbaseController {
                     List<String> c7 = splitData(datas[6]);
                     List<String> c8 = splitData(datas[7]);
 
-                    for (int i=0; i < c3.size(); i++) {
+                    for (int i = 0; i < c3.size(); i++) {
                         String traceData = String.format("%s,%s,%s,%s,%s,%s,%s,%s\n", datas[0], datas[1], c3.get(i), c4.get(i), c5.get(i), c6.get(i), c7.get(i), c8.get(i));
                         String completeTraceData = String.format("%d,%s,%s,%s", rowNum, refValue, qualifier, traceData);
+                        baos.write(completeTraceData.getBytes());
                         rowNum++;
                     }
                 }
@@ -240,7 +241,7 @@ public class HbaseController {
                     String strQualifier = new String(qualifier);
                     log.info("[DECOMPRESS] COLUMN FAMILY : {}, QUALIFIER : {}", strColumnFamily, strQualifier);
                     String refValue = new String(r.getValue(columnFamily, refValueQualifier.getBytes()));
-                    log.info("[DECOMPRESS] REFVALUE : {}", refValue);
+                    log.info("[DECOMPRESS] REF VALUE : {}", refValue);
 
                     if (!strQualifier.equals(refValueQualifier)) {
                         // uncompressed trace data

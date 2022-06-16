@@ -87,7 +87,7 @@ public class HbaseController {
         ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
         List<Callable<Object>> callableTasks = new ArrayList();
         for (int i = 0; i < numberOfThreads; i++) {
-            int idx = 1;
+            int idx = i;
             Callable<Object> callableTask = () -> {
                 return decompressTest(partRowKeys.get(idx));
             };
@@ -196,9 +196,10 @@ public class HbaseController {
                     List<String> c7 = splitData(datas[6]);
                     List<String> c8 = splitData(datas[7]);
 
-                    for (int i=0; i < c3.size(); i++) {
+                    for (int i = 0; i < c3.size(); i++) {
                         String traceData = String.format("%s,%s,%s,%s,%s,%s,%s,%s\n", datas[0], datas[1], c3.get(i), c4.get(i), c5.get(i), c6.get(i), c7.get(i), c8.get(i));
                         String completeTraceData = String.format("%d,%s,%s,%s", rowNum, refValue, qualifier, traceData);
+                        baos.write(completeTraceData.getBytes());
                         rowNum++;
                     }
                 }
