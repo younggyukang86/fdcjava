@@ -19,4 +19,5 @@ include 'dbDbcpTest'
 include 'dbHikariTest'
 include 'springBootNativeTest'
 include 'hbase-file-loader'
+include 'nativeImpl'
 
