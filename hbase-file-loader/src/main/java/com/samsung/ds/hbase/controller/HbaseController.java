@@ -366,6 +366,30 @@ public class HbaseController {
             isolateThread = Native.createIsolate();
         }
 
+        /*List<String[]> datas = new ArrayList<>();
+        for (String rowKey : rowKeys) {
+            Result r = getResultFromHbase(rowKey, table);
+
+            for (byte[] columnFamily : r.getMap().keySet()) {
+                for (byte[] qualifier : r.getMap().get(columnFamily).keySet()) {
+                    String strColumnFamily = new String(columnFamily);
+                    String strQualifier = new String(qualifier);
+                    String refValue = new String(r.getValue(columnFamily, refValueQualifier.getBytes()));
+
+                    if (!strQualifier.equals(refValueQualifier)) {
+                        String value = new String(r.getValue(columnFamily, qualifier));
+
+                        String[] data = new String[5];
+                        data[0] = strColumnFamily;
+                        data[1] = strQualifier;
+                        data[2] = refValue;
+                        data[3] = value;
+                        datas.add(data);
+                    }
+                }
+            }
+        }*/
+
         for (String rowKey : rowKeys) {
             //log.info("[DECOMPRESS] ROW KEY : {}", rowKey);
             Result r = getResultFromHbase(rowKey, table);
