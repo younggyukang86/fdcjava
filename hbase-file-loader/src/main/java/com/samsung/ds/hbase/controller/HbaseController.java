@@ -1,5 +1,6 @@
 package com.samsung.ds.hbase.controller;
 
+import com.samsung.ds.hbase.utils.Native;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -23,6 +24,7 @@ import org.xerial.snappy.Snappy;
 
 import java.io.*;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,12 +69,20 @@ public class HbaseController {
     public ResponseEntity getTable(@RequestParam(defaultValue = "1", required = true) String num,
                                    @RequestParam(defaultValue = "1", required = true) String rowCount) throws IOException {
         Timestamp totalStart = new Timestamp(System.currentTimeMillis());
+        long start = System.currentTimeMillis();
+
         long totalCount = 0L;
         int numberOfThreads = Integer.valueOf(num);
         int rowKeySetCount = Integer.valueOf(rowCount);
+        log.info("numberOfThreads : {}", numberOfThreads);
+        log.info("rowKeySetCount : {}", rowKeySetCount);
 
+        long rowKeyStart = System.currentTimeMillis();
         // get rowkeys from mes
         List<String> rowKeys = getRowKeys();
+        System.out.println("Java Row Key Select : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - rowKeyStart) / 1000.0) + " seconds");
+
+        long partKeyStart = System.nanoTime();
         List<String> tmpRowKeys = new ArrayList<>();
         for (int i = 0; i < rowKeySetCount; i++) {
             tmpRowKeys.addAll(rowKeys);
@@ -89,13 +99,15 @@ public class HbaseController {
             }
             partRowKeys.add(result);
         }
+        System.out.printf("Java Part Row Key Set : (%d ns)%n", System.nanoTime() - partKeyStart);
 
+        long executorStart = System.currentTimeMillis();
         ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
         List<Callable<Object>> callableTasks = new ArrayList();
         for (int i = 0; i < numberOfThreads; i++) {
             int idx = i;
             Callable<Object> callableTask = () -> {
-                return decompressTest(partRowKeys.get(idx));
+                return decompressTest(partRowKeys.get(idx), 1);
             };
             callableTasks.add(callableTask);
         }
@@ -109,7 +121,9 @@ public class HbaseController {
                     baos.write(data.getBytes());
                 }
             }
+            System.out.println("Java Executor Service decompress : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - executorStart) / 1000.0) + " seconds");
 
+            long fileStart = System.currentTimeMillis();
             // write csv file
             File file = new File(outputPath, String.format("trace_data_write_%d.csv", System.currentTimeMillis()));
             InputStream is = new ByteArrayInputStream(baos.toByteArray());
@@ -125,7 +139,7 @@ public class HbaseController {
             Timestamp writeEnd = new Timestamp(System.currentTimeMillis());
             log.info("[WRITE] START TIME : {}", writeStart);
             log.info("[WRITE] END TIME : {}", writeEnd);
-
+            System.out.println("Java File Write : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - fileStart) / 1000.0) + " seconds");
         } catch (Exception e) {
             log.error("[ERROR] EXECUTOR ERROR :{}", e);
         } finally {
@@ -134,7 +148,111 @@ public class HbaseController {
         log.info("[TOTAL] START TIME :{}", totalStart);
         log.info("[TOTAL] END TIME :{}", new Timestamp(System.currentTimeMillis()));
 
+        long end = System.currentTimeMillis();
+        System.out.println("Java Total Time : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " seconds");
+
         return ResponseEntity.ok(totalCount);
+    }
+
+    @GetMapping("/getTable2")
+    public ResponseEntity getTable2(@RequestParam(defaultValue = "1", required = true) String num,
+                                   @RequestParam(defaultValue = "1", required = true) String rowCount) throws IOException {
+        Timestamp totalStart = new Timestamp(System.currentTimeMillis());
+        long start = System.currentTimeMillis();
+
+        long totalCount = 0L;
+        int numberOfThreads = Integer.valueOf(num);
+        int rowKeySetCount = Integer.valueOf(rowCount);
+        log.info("numberOfThreads : {}", numberOfThreads);
+        log.info("rowKeySetCount : {}", rowKeySetCount);
+
+        long rowKeyStart = System.currentTimeMillis();
+        // get rowkeys from mes
+        List<String> rowKeys = getRowKeys();
+        System.out.println("Java Row Key Select : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - rowKeyStart) / 1000.0) + " seconds");
+
+        long partKeyStart = System.nanoTime();
+        List<String> tmpRowKeys = new ArrayList<>();
+        for (int i = 0; i < rowKeySetCount; i++) {
+            tmpRowKeys.addAll(rowKeys);
+        }
+        List<List<String>> partRowKeys = new ArrayList<>();
+        int idx1 = (int) Math.ceil((double) tmpRowKeys.size() / numberOfThreads);
+        log.info("idx1 :{}", idx1);
+        for (int i = 1; i <= numberOfThreads; i++) {
+            List<String> result = new ArrayList<>();
+            int idx2 = idx1 * i > tmpRowKeys.size() ? tmpRowKeys.size() : idx1 * i;
+            log.info("idx2 :{}", idx2);
+            for (int j = (i-1) * idx1; j < idx2; j++) {
+                result.add(tmpRowKeys.get(j));
+            }
+            partRowKeys.add(result);
+        }
+        System.out.printf("Java Part Row Key Set : (%d ns)%n", System.nanoTime() - partKeyStart);
+
+        long executorStart = System.currentTimeMillis();
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
+        List<Callable<Object>> callableTasks = new ArrayList();
+        for (int i = 0; i < numberOfThreads; i++) {
+            int idx = i;
+            Callable<Object> callableTask = () -> {
+                return decompressTest(partRowKeys.get(idx), 2);
+            };
+            callableTasks.add(callableTask);
+        }
+
+        try {
+            List<Future<Object>> futures = executor.invokeAll(callableTasks);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            for (Future<Object> future : futures) {
+                List<String> datas = (List<String>) future.get();
+                for (String data : datas) {
+                    baos.write(data.getBytes());
+                }
+            }
+            System.out.println("Java Executor Service decompress : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - executorStart) / 1000.0) + " seconds");
+
+            long fileStart = System.currentTimeMillis();
+            // write csv file
+            File file = new File(outputPath, String.format("trace_data_write_%d.csv", System.currentTimeMillis()));
+            InputStream is = new ByteArrayInputStream(baos.toByteArray());
+            Timestamp writeStart = new Timestamp(System.currentTimeMillis());
+            try {
+                IOUtils.copy(is, new FileOutputStream(file));
+                is.close();
+                log.info("[CSV FILE] create csv file!!!!");
+            } catch (Exception e) {
+                // TODO
+                throw new RuntimeException("CSV 파일 생성을 실패하였습니다." + e);
+            }
+            Timestamp writeEnd = new Timestamp(System.currentTimeMillis());
+            log.info("[WRITE] START TIME : {}", writeStart);
+            log.info("[WRITE] END TIME : {}", writeEnd);
+            System.out.println("Java File Write : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - fileStart) / 1000.0) + " seconds");
+        } catch (Exception e) {
+            log.error("[ERROR] EXECUTOR ERROR :{}", e);
+        } finally {
+            executor.shutdown();
+        }
+        log.info("[TOTAL] START TIME :{}", totalStart);
+        log.info("[TOTAL] END TIME :{}", new Timestamp(System.currentTimeMillis()));
+
+        long end = System.currentTimeMillis();
+        System.out.println("Java Total Time : " + new DecimalFormat("###.0").format((end - start) / 1000.0) + " seconds");
+
+        return ResponseEntity.ok(totalCount);
+    }
+
+    @GetMapping("/getTable3")
+    public ResponseEntity getTable3(@RequestParam(defaultValue = "1", required = true) String num,
+                                    @RequestParam(defaultValue = "1", required = true) String rowCount) throws IOException {
+        int numberOfThreads = Integer.valueOf(num);
+        int rowKeySetCount = Integer.valueOf(rowCount);
+
+        long isolateThread = Native.createIsolate();
+        Native.decompressTest(isolateThread, numberOfThreads, rowKeySetCount);
+
+        return ResponseEntity.ok(1);
     }
 
     @GetMapping("/getTableDistributeFile")
@@ -227,28 +345,64 @@ public class HbaseController {
         return rowNum;
     }
 
-    private List<String> decompressTest(List<String> rowKeys) throws IOException {
+    private List<String> decompressTest(List<String> rowKeys, Integer type) throws IOException {
+        long tableStart = System.currentTimeMillis();
         Table table = getHbaseTable();
+        System.out.println("Java Table Set : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - tableStart) / 1000.0) + " seconds");
+
+        long functionStart = System.nanoTime();
+        long start = System.nanoTime();
+        long forStart = System.currentTimeMillis();
+
         List<String> traceDatas = new ArrayList<>();
         long rowNum = 0;
 
+
+        if (type == null) {
+            type = 1;
+        }
+        long isolateThread = 0;
+        if (type == 2) {
+            isolateThread = Native.createIsolate();
+        }
+
         for (String rowKey : rowKeys) {
-            log.info("[DECOMPRESS] ROW KEY : {}", rowKey);
+            //log.info("[DECOMPRESS] ROW KEY : {}", rowKey);
             Result r = getResultFromHbase(rowKey, table);
             for (byte[] columnFamily : r.getMap().keySet()) {
                 for (byte[] qualifier : r.getMap().get(columnFamily).keySet()) {
                     String strColumnFamily = new String(columnFamily);
                     String strQualifier = new String(qualifier);
-                    log.info("[DECOMPRESS] COLUMN FAMILY : {}, QUALIFIER : {}", strColumnFamily, strQualifier);
+                    //log.info("[DECOMPRESS] COLUMN FAMILY : {}, QUALIFIER : {}", strColumnFamily, strQualifier);
                     String refValue = new String(r.getValue(columnFamily, refValueQualifier.getBytes()));
-                    log.info("[DECOMPRESS] REF VALUE : {}", refValue);
+                    //log.info("[DECOMPRESS] REF VALUE : {}", refValue);
 
                     if (!strQualifier.equals(refValueQualifier)) {
                         // uncompressed trace data
                         String value = new String(r.getValue(columnFamily, qualifier));
-                        log.info("raw data : {}", value);
-                        String data = new String(Snappy.uncompress(Base64.decodeBase64(value)));
-                        log.info("decomressed data : {}", data);
+                        //log.info("raw data : {}", value);
+
+                        functionStart = System.nanoTime();
+
+                        String data = "";
+                        if (type == 2) {
+                            // NATIVE CODE
+                            data = Native.snappyUncompress(isolateThread, value);
+                            System.out.printf(rowNum + "No : Native Snappy Uncompress Function Call Time : (%d ns)%n", System.nanoTime() - functionStart);
+                        } else {
+                            start = System.nanoTime();
+                            //String data = new String(Snappy.uncompress(Base64.decodeBase64(value)));
+                            byte[] base64DecodeData = Base64.decodeBase64(value);
+                            //System.out.printf(rowNum + "No : Java Apache Base 64 Decode : (%d ns)%n", System.nanoTime() - start);
+
+                            start = System.nanoTime();
+                            data = Snappy.uncompressString(base64DecodeData);
+                            //System.out.printf(rowNum + "No : Java Snappy Uncompress : (%d ns)%n", System.nanoTime() - start);
+                            //System.out.printf(rowNum + "No : Java Snappy Uncompress Function Call Time : (%d ns)%n", System.nanoTime() - functionStart);
+                        }
+
+                        //log.info("decomressed data : {}", data);
+
                         // unnest trace data
                         String[] datas = data.split(",");
                         List<String> c3 = splitData(datas[2]);
@@ -263,11 +417,12 @@ public class HbaseController {
                             traceDatas.add(String.format("%d,%s,%s,%s", rowNum, refValue, qualifier, traceData));
                             rowNum++;
                         }
-
                     }
                 }
             }
         }
+
+        System.out.println("Java For Total Time : " + new DecimalFormat("###.0").format((System.currentTimeMillis() - forStart) / 1000.0) + " seconds");
 
         return traceDatas;
     }

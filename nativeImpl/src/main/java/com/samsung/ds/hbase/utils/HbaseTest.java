@@ -172,7 +172,6 @@ public class HbaseTest {
                             traceDatas.add(String.format("%d,%s,%s,%s", rowNum, refValue, qualifier, traceData));
                             rowNum++;
                         }
-
                     }
                 }
             }
