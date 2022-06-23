@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Component("config")
 public class ConfigProperties {
 
-    private static final String SERVER_PROPERTIES = "config.properties";
+    private static final String PROPERTIES_NAME = "config.properties";
 
     private ReloadingFileBasedConfigurationBuilder<PropertiesConfiguration> builder;
     private Environment env;
@@ -38,7 +38,7 @@ public class ConfigProperties {
 
     @PostConstruct
     void init() {
-        File file = new File(getClass().getClassLoader().getResource(SERVER_PROPERTIES).getFile());
+        File file = new File(getClass().getClassLoader().getResource(PROPERTIES_NAME).getFile());
 
         List<FileLocationStrategy> subs = Arrays.asList(
                 new ProvidedURLLocationStrategy(),
