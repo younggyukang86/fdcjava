@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.samsung.ds.hbase.utils'
+version = '1.0'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+dependencies {
+
+    implementation 'org.xerial.snappy:snappy-java:1.1.8.4' // Snappy
+
+    // Apache Tools
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'org.apache.commons:commons-configuration2:2.7'
+    implementation 'commons-beanutils:commons-beanutils:1.9.4'
+    //implementation 'commons-lang:commons-lang:2.6'
+
+    implementation 'com.zaxxer:HikariCP:4.0.3' // Hikari CP(Java 8 base) 5.0.0 이상 부터 - Java 11 Base
+    implementation 'org.postgresql:postgresql:42.3.6' // Postgre Sql
+    implementation 'org.apache.hbase:hbase-client:2.4.12' // Hbase
+    implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16' // Log4j Jdbc
+    implementation 'org.slf4j:slf4j-simple:1.7.36' // Slf4j Simple
+
+    compileOnly 'org.graalvm.nativeimage:svm:22.1.0.1' // Graalvm Native JNI Interface
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+task copyDependencies(type: Copy) {
+    into "$buildDir/libs/deps"
+    from configurations.runtimeClasspath
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.samsung.ds.hbase.utils.NativeImpl',
+                'Class-Path': configurations.compileClasspath.files.collect { "deps/$it.name" }.join(' ')
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    archiveFileName = "nativeimpl.jar"
+}
+
+test {
+    useJUnitPlatform()
+}
