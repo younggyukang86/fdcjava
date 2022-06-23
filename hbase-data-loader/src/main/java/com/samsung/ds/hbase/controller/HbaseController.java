@@ -117,7 +117,7 @@ public class HbaseController {
             }
             Timestamp writeEnd = new Timestamp(System.currentTimeMillis());
             log.info("[WRITE] START TIME : {}", writeStart);
-            log.info("[WRITE] START TIME : {}", writeEnd);
+            log.info("[WRITE] END TIME : {}", writeEnd);
 
         } catch (Exception e) {
             log.error("[ERROR] EXECUTOR ERROR :{}", e);
